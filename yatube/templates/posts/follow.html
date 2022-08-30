@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% load cache %}
+    {% block title %}Моя лента{%endblock %}
+    {% block content %}
+      <div class="container py-5">
+        {% include 'posts/includes/switcher.html' %}
+        <h1>Моя лента</h1>
+        {% for post in page_obj %}
+          {% include 'posts/includes/post_card.html' %}
+        {% endfor %}
+        {% include 'posts/includes/paginator.html' %}
+      </div>
+    {% endblock %}

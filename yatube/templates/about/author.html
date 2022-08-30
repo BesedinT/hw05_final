@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Об авторе проекта{% endblock %}
+{% block content %}
+<h2>Об авторе</h2>
+<p>
+  Автор: Анатолий Беседин <br>
+  email: besedin.tolik777@yandex.
+</p>
+<a href="https://github.com/BesedinT" target="_blank">Github</a> 
+<br>
+<a href="{% url 'about:tech' %}">Используемые технологии</a>
+{% endblock %} 

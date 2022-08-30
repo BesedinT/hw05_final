@@ -32,8 +32,8 @@ def profile(request, username):
     author = get_object_or_404(User, username=username)
     if request.user.is_authenticated:
         following = Follow.objects.filter(
-            user=request.user.id,
-            author=author.id
+            user=request.user,
+            author=author
         ).exists()
     else:
         following = False
@@ -115,12 +115,12 @@ def profile_follow(request, username):
     user = request.user
     author = get_object_or_404(User, username=username)
     if author != user:
-        Follow.objects.create(author=author, user=user)
+        Follow.objects.get_or_create(user=user, author=author)
     return redirect('posts:profile', username=username)
 
 
 @login_required
 def profile_unfollow(request, username):
     author = get_object_or_404(User, username=username)
-    Follow.objects.filter(author=author, user=request.user).delete()
+    Follow.objects.filter(user=request.user, author=author).delete()
     return redirect('posts:profile', username=username)

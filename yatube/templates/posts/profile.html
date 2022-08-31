@@ -3,8 +3,10 @@
 {% block content %}
   <div class="container py-5">
     <h1>Все посты пользователя {{ author }} </h1>
-    <h3>Всего постов: {{ author.posts.count }} </h3>
-    {% if request.user != author %}
+    <h4>Всего постов: {{ author.posts.count }} </h4>
+    <h5>Подписчики: {{ author.following.count }} </h5>
+    <h5>Подписки: {{ author.follower.count }} </h5>
+    {% if request.user != author and user.is_authenticated %}
       {% if following %}
         <a
           class="btn btn-lg btn-light"

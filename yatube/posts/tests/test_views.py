@@ -129,13 +129,21 @@ class PostViewsTests(TestCase):
 
     def test_index_cache(self):
         """Ошибка кэша главной страницы"""
-        response_0 = self.client.get(reverse('posts:index'))
-        Post.objects.filter(pk=self.post.id).delete()
+        Post.objects.create(
+            author=self.user,
+            text='Кэш',
+            group=self.group,
+        )
         response_1 = self.client.get(reverse('posts:index'))
-        self.assertEqual(response_1.content, response_0.content)
+        Post.objects.filter(text='Кэш').delete()
+        response_2 = self.client.get(reverse('posts:index'))
+        self.assertEqual(response_1.content, response_2.content)
+        cache.clear()
+        response_3 = self.client.get(reverse('posts:index'))
+        self.assertNotEqual(response_1.content, response_3.content)
 
     def test_follow(self):
-        """Ошибка создания/удаления подписки"""
+        """Ошибка создания подписки"""
         Follow.objects.all().delete()
         self.assertEqual(Follow.objects.count(), 0)
         self.authorized_client.get(reverse('posts:profile_follow',
@@ -144,6 +152,12 @@ class PostViewsTests(TestCase):
         follow = Follow.objects.first()
         self.assertEqual(follow.user, self.user)
         self.assertEqual(follow.author, self.user_2)
+
+    def test_unfollow(self):
+        """Ошибка удаления подписки"""
+        Follow.objects.all().delete()
+        Follow.objects.create(user=self.user, author=self.user_2)
+        self.assertEqual(Follow.objects.count(), 1)
         self.authorized_client.get(reverse('posts:profile_unfollow',
                                            args=(self.user_2,)))
         self.assertEqual(Follow.objects.count(), 0)
@@ -157,8 +171,7 @@ class PostViewsTests(TestCase):
         response = self.authorized_client_user.get(reverse
                                                    ('posts:follow_index'))
         self.assertEqual(len(response.context['page_obj']), 0)
-        self.authorized_client.get(reverse('posts:profile_follow',
-                                           args=(self.user_2,)))
+        Follow.objects.create(user=self.user, author=self.user_2)
         Post.objects.create(
             author=self.user_2,
             text='Тестовый пост_user_2',
@@ -180,6 +193,7 @@ class PaginatorViewsTest(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.user = User.objects.create_user(username='auth')
+        cls.user_2 = User.objects.create_user(username='user')
         cls.group = Group.objects.create(
             title='Тестовая группа',
             slug='testslug',
@@ -195,22 +209,28 @@ class PaginatorViewsTest(TestCase):
         ]
         Post.objects.bulk_create(posts)
 
+    def setUp(self):
+        self.authorized_client_user = Client()
+        self.authorized_client_user.force_login(self.user_2)
+        Follow.objects.create(user=self.user_2, author=self.user)
+
     def test_page_paginator(self):
         """Ошибка Paginator"""
-        urls = {
-            'posts:index': None,
-            'posts:group_list': (self.group.slug,),
-            'posts:profile': (self.user,)
-        }
-        pages = {
-            '?page=1': POSTS_OF_PAGE,
-            '?page=2': POST_COUNT_TEST - POSTS_OF_PAGE
-        }
-        for name, args in urls.items():
+        urls = (
+            ('posts:index', None),
+            ('posts:group_list', (self.group.slug,)),
+            ('posts:profile', (self.user,)),
+            ('posts:follow_index', None)
+        )
+        pages = (
+            ('?page=1', POSTS_OF_PAGE),
+            ('?page=2', POST_COUNT_TEST - POSTS_OF_PAGE),
+        )
+        for name, args in urls:
             with self.subTest(name=name):
-                for page, posts_in_page in pages.items():
+                for page, posts_in_page in pages:
                     with self.subTest(page=page):
-                        response = self.client.get(reverse(name, args=args)
-                                                   + page)
+                        response = (self.authorized_client_user.get
+                                    (reverse(name, args=args) + page))
                         self.assertEqual(len(response.context['page_obj']),
                                          posts_in_page)

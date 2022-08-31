@@ -44,6 +44,13 @@ class PostURLTests(TestCase):
             ('posts:post_create', None, '/create/'),
             ('posts:post_edit', (self.post.id,),
              f'/posts/{self.post.id}/edit/'),
+            ('posts:add_comment', (self.post.id,),
+             f'/posts/{self.post.id}/comment/'),
+            ('posts:follow_index', None, '/follow/'),
+            ('posts:profile_follow', (self.post.author,),
+             f'/profile/{self.post.author}/follow/'),
+            ('posts:profile_unfollow', (self.post.author,),
+             f'/profile/{self.post.author}/unfollow/'),
         )
 
     def test_namespace_name_vs_urls(self):
@@ -57,7 +64,14 @@ class PostURLTests(TestCase):
         for name, args, _ in self.url_names:
             with self.subTest(name=name):
                 response = self.authorized_client.get(reverse(name, args=args))
-                self.assertEqual(response.status_code, HTTPStatus.OK)
+                if name in [
+                    'posts:add_comment',
+                    'posts:profile_follow',
+                    'posts:profile_unfollow'
+                ]:
+                    self.assertEqual(response.status_code, 302)
+                else:
+                    self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_authorized_user_page(self):
         """Ошибка доступности страниц для авторизрванного пользователя"""
@@ -68,6 +82,12 @@ class PostURLTests(TestCase):
                 if name == 'posts:post_edit':
                     self.assertRedirects(response, reverse('posts:post_detail',
                                                            args=args))
+                elif name in [
+                    'posts:add_comment',
+                    'posts:profile_follow',
+                    'posts:profile_unfollow'
+                ]:
+                    self.assertEqual(response.status_code, 302)
                 else:
                     self.assertEqual(response.status_code, HTTPStatus.OK)
 
@@ -80,7 +100,11 @@ class PostURLTests(TestCase):
                 response = self.client.get(reverse_name)
                 if name in [
                     'posts:post_edit',
-                    'posts:post_create'
+                    'posts:post_create',
+                    'posts:add_comment',
+                    'posts:follow_index',
+                    'posts:profile_follow',
+                    'posts:profile_unfollow'
                 ]:
                     self.assertRedirects(response,
                                          f'{login}?next={reverse_name}')
@@ -102,6 +126,7 @@ class PostURLTests(TestCase):
             ('posts:post_detail', (self.post.id,), 'posts/post_detail.html'),
             ('posts:post_create', None, 'posts/create_post.html'),
             ('posts:post_edit', (self.post.id,), 'posts/create_post.html'),
+            ('posts:follow_index', None, 'posts/follow.html'),
         )
         for name, args, template in templates_url_names:
             with self.subTest(name=name):

@@ -1,13 +1,11 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, render, redirect
-from django.views.decorators.cache import cache_page
 
 from .forms import CommentForm, PostForm
-from .models import Comment, Follow, Group, Post, User
+from .models import Follow, Group, Post, User
 from .utils import page_context
 
 
-@cache_page(20)
 def index(request):
     context = {
         'page_obj':
@@ -30,13 +28,10 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    if request.user.is_authenticated:
-        following = Follow.objects.filter(
-            user=request.user,
-            author=author
-        ).exists()
-    else:
-        following = False
+    following = Follow.objects.filter(
+        user=request.user.id,
+        author=author.id
+    ).exists() and request.user.is_authenticated
     context = {
         'author': author,
         'page_obj':
@@ -48,12 +43,13 @@ def profile(request, username):
 
 
 def post_detail(request, post_id):
+    post_detail = (Post.objects.prefetch_related('comments__author').
+                   filter(pk=post_id))
     post_detail = get_object_or_404(Post, pk=post_id)
-    comments = Comment.objects.filter(post=post_id)
     form = CommentForm()
     context = {
         'post': post_detail,
-        'comments': comments,
+        'comments': post_detail.comments.select_related('author'),
         'form': form
     }
     return render(request, 'posts/post_detail.html', context)
@@ -103,7 +99,9 @@ def add_comment(request, post_id):
 
 @login_required
 def follow_index(request):
-    post_list = Post.objects.filter(author__following__user=request.user)
+    post_list = Post.objects.select_related('author', 'group').filter(
+        author__following__user=request.user
+    )
     context = {
         'page_obj': page_context(request, post_list),
     }
@@ -121,6 +119,5 @@ def profile_follow(request, username):
 
 @login_required
 def profile_unfollow(request, username):
-    author = get_object_or_404(User, username=username)
-    Follow.objects.filter(user=request.user, author=author).delete()
+    Follow.objects.filter(author__username=username).delete()
     return redirect('posts:profile', username=username)

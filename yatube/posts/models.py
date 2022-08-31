@@ -93,9 +93,17 @@ class Follow(models.Model):
     )
 
     class Meta:
-        verbose_name = 'Лента'
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
         constraints = [
             models.UniqueConstraint(
                 fields=['user', 'author'], name='already_following'
-            )
+            ),
+            models.CheckConstraint(
+                check=~models.Q(user=models.F('author')),
+                name='revent_self_follow',
+            ),
         ]
+
+        def __str__(self) -> str:
+            return f'Пользователь {self.user} надписан на {self.author}'

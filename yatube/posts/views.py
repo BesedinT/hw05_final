@@ -28,9 +28,8 @@ def group_posts(request, slug):
 
 def profile(request, username):
     author = get_object_or_404(User, username=username)
-    following = Follow.objects.filter(
+    following = author.following.filter(
         user=request.user.id,
-        author=author.id
     ).exists() and request.user.is_authenticated
     context = {
         'author': author,
@@ -43,13 +42,12 @@ def profile(request, username):
 
 
 def post_detail(request, post_id):
-    post_detail = (Post.objects.prefetch_related('comments__author').
-                   filter(pk=post_id))
-    post_detail = get_object_or_404(Post, pk=post_id)
+    post_detail = get_object_or_404(Post.objects.prefetch_related
+                                    ('comments__author'), pk=post_id)
     form = CommentForm()
     context = {
         'post': post_detail,
-        'comments': post_detail.comments.select_related('author'),
+        'comments': post_detail.comments.all(),
         'form': form
     }
     return render(request, 'posts/post_detail.html', context)
@@ -119,5 +117,5 @@ def profile_follow(request, username):
 
 @login_required
 def profile_unfollow(request, username):
-    Follow.objects.filter(author__username=username).delete()
+    get_object_or_404(Follow, author__username=username).delete()
     return redirect('posts:profile', username=username)

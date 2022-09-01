@@ -120,7 +120,7 @@ class PostViewsTests(TestCase):
                                    args=(self.group.slug,)))
         self.assertEqual(len(response.context['page_obj']), 1)
 
-    def test_view_on_post_detail(self):
+    def test_comment_view_on_post_detail(self):
         """Ошибка отображения комментария на странице поста"""
         response = self.client.get(reverse('posts:post_detail',
                                    args=(self.comment.post.id,)))

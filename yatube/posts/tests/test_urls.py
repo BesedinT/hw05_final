@@ -66,10 +66,19 @@ class PostURLTests(TestCase):
                 response = self.authorized_client.get(reverse(name, args=args))
                 if name in [
                     'posts:add_comment',
+                ]:
+                    self.assertRedirects(response,
+                                         f'/posts/{self.post.id}/')
+                elif name in [
                     'posts:profile_follow',
+                ]:
+                    self.assertRedirects(response,
+                                         f'/profile/{self.post.author}/')
+                elif name in [
                     'posts:profile_unfollow'
                 ]:
-                    self.assertEqual(response.status_code, 302)
+                    self.assertEqual(response.status_code,
+                                     HTTPStatus.NOT_FOUND)
                 else:
                     self.assertEqual(response.status_code, HTTPStatus.OK)
 
@@ -84,10 +93,15 @@ class PostURLTests(TestCase):
                                                            args=args))
                 elif name in [
                     'posts:add_comment',
+                ]:
+                    self.assertRedirects(response,
+                                         f'/posts/{self.post.id}/')
+                elif name in [
                     'posts:profile_follow',
                     'posts:profile_unfollow'
                 ]:
-                    self.assertEqual(response.status_code, 302)
+                    self.assertRedirects(response,
+                                         f'/profile/{self.post.author}/')
                 else:
                     self.assertEqual(response.status_code, HTTPStatus.OK)
 

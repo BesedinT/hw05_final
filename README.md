@@ -14,8 +14,24 @@ Django 2.2.19
 - добавление комментариев
 - пагинация
 
-### Запуск проекта в dev-режиме 
-- Установите и активируйте виртуальное окружение 
-- Установите зависимости из файла requirements.txt 
-- ``` pip install -r requirements.txt ``` 
--  В папке с файлом manage.py выполните команду: ``` python manage.py runserver ``` 
+### Запуск проекта: 
+Установите и активируйте виртуальное окружение:
+
+```
+python -m venv env
+```
+
+```
+source env/bin/activate
+```
+
+Установите зависимости: 
+```
+pip install -r requirements.txt
+```
+
+В папке с файлом manage.py выполните команду:
+
+```
+python manage.py runserver
+``` 
